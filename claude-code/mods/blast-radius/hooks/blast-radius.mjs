@@ -104,6 +104,13 @@ export function register(on) {
     return {
       deny: `Blast Radius held this command and did not run it: ${why}. It would have: ${summary}. Do not retry it unless the user asks you to.`,
     };
+  }).catch(($, e, next) => {
+    // A crash outside the hold's own try (classifying, or waiting on another
+    // hold) would otherwise let the command through: refuse it instead.
+    if (next.called) {
+      return { deny: `Blast Radius hit an error (${next.error.kind}) after the command ran, so its result is not shown. Check its effect before running anything else.` };
+    }
+    return { deny: `Blast Radius could not check this command (${next.error.kind}), so it was not run. Do not retry it unless the user asks you to.` };
   });
 
   on("ui.render", { component: "Pane" }, ($, e, next) => {
